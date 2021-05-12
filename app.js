@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const request = require("request");
 const dotenv = require("dotenv");
 const https = require("https");
+const { response } = require("express");
 
 const app = express();
 app.use(bodyParser.json());
@@ -60,6 +61,34 @@ app.post("/", (req, res) => {
   mailchimpRequest.end();
 
   console.log(email);
+});
+
+app.get("/", async (req, res) => {
+  const mailChimpAPIKey = process.env.API_KEY;
+  const listID = process.env.LIST_ID;
+
+  const url = "https://us1.api.mailchimp.com/3.0/lists/" + listID + "/members";
+
+  const options = {
+    method: "GET",
+    auth: "mailchimp:" + mailChimpAPIKey,
+    fields: "email_address",
+    count: 100,
+  };
+
+  const mailchimpRequest = https.request(url, options, async (response) => {
+    let data = "";
+    try {
+      await response.on("data", (d) => {
+        data += d;
+      });
+    } catch (err) {
+      console.log("err : " + err.message);
+    }
+    res.send({ message: "success", data : data});
+  });
+
+  mailchimpRequest.end();
 });
 
 app.listen(process.env.PORT || 8000, () => {
